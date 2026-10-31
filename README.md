@@ -6,7 +6,11 @@ An MCP (Model Context Protocol) server that provides Gmail integration for readi
 
 ### 1. Install Dependencies
 
-pip install -r requirements.txt### 2. Set Up Gmail API Credentials
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+### 2. Set Up Gmail API Credentials
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
@@ -27,8 +31,12 @@ When you first run the server, it will:
 3. Save the token to `token.json` for future use
 
 ### 4. Run the MCP Server
-ash
-python mcp_gmail_server.py## Available Tools
+
+```bash
+python3 mcp_gmail_server.py
+```
+
+## Available Tools
 
 ### `get_unread_emails`
 Get a list of unread emails from your inbox.
@@ -60,21 +68,29 @@ List emails with optional Gmail search query.
 
 The MCP server can be used with any MCP-compatible client. Example tool calls:
 
+```json
 {
   "tool": "get_unread_emails",
   "arguments": {"max_results": 5}
 }
+```
+
+```json
 {
   "tool": "send_reply",
   "arguments": {
     "message_id": "1234567890",
     "reply_text": "Thank you for your email. I'll get back to you soon."
   }
-}## Security Notes
+}
+```
+
+## Security Notes
 
 - Keep `credentials.json` and `token.json` secure and never commit them to version control
 - The `token.json` file contains your OAuth tokens and should be kept private
 - Only grant necessary permissions when authenticating
+- The Flask interface can read, send, and delete email. It binds to localhost with debug mode disabled. Do not expose it to a network without adding authentication and using an appropriate deployment server.
 
 ## Troubleshooting
 

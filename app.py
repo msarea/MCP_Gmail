@@ -6,7 +6,6 @@ Includes AI Scheduling Agent interface
 """
 
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
-from flask_cors import CORS
 from gmail_client import GmailClient
 from calendar_client import CalendarClient
 import os
@@ -14,7 +13,6 @@ import subprocess
 import json
 
 app = Flask(__name__)
-CORS(app)
 
 # Initialize Gmail client
 gmail_client = None
@@ -578,4 +576,6 @@ if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static', exist_ok=True)
     
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # This API can read, send, and delete mail. Keep the dev server local
+    # and disable the interactive debugger by default.
+    app.run(debug=False, host='127.0.0.1', port=5001)
