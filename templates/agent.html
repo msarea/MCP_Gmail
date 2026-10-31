@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Scheduling Agent - Professional Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            overflow: hidden;
+        }
+        
+        .input-section {
+            margin-bottom: 20px;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .prompt-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .prompt-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .prompt-input:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-voice {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-voice:hover:not(:disabled) {
+            background: #c0392b;
+        }
+        
+        .btn-voice.recording {
+            background: #27ae60;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .voice-status {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+        
+        .response-section {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .response-section:empty::before {
+            content: "Your agent responses will appear here...";
+            color: #999;
+            font-style: italic;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .message.error {
+            border-left-color: #e74c3c;
+            background: #fee;
+        }
+        
+        .message.success {
+            border-left-color: #27ae60;
+            background: #efe;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .quick-prompts {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .quick-prompt-btn {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .quick-prompt-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #27ae60;
+        }
+        
+        .status-dot.offline {
+            background: #e74c3c;
+        }
+        
+        .tts-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .tts-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .tts-checkbox-label input {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Scheduling Agent</h1>
+            <p>Intelligent Gmail & Calendar Assistant</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="quick-prompts">
+                <button class="quick-prompt-btn" onclick="setPrompt('Check my unread emails')">📧 Check Unread</button>
+                <button class="quick-prompt-btn" onclick="setPrompt('Show my calendar for next week')">📅 View Calendar</button>
+                <button class="quick-prompt-btn" onclick="setPrompt('Find meeting requests in my emails')">🔍 Find Meetings</button>
+                <button class="quick-prompt-btn" onclick="setPrompt('What are my free time slots tomorrow?')">⏰ Free Time</button>
+            </div>
+            
+            <div class="input-section">
+                <div class="input-container">
+                    <input 
+                        type="text" 
+                        id="promptInput" 
+                        class="prompt-input" 
+                        placeholder="Ask me anything about your emails or calendar... (or click the microphone to speak)"
+                        onkeypress="handleKeyPress(event)"
+                    >
+                    <button class="btn btn-voice" id="voiceBtn" onclick="toggleVoiceInput()">
+                        🎤 Voice
+                    </button>
+                    <button class="btn btn-primary" id="sendBtn" onclick="sendPrompt()">
+                        ➤ Send
+                    </button>
+                </div>
+                <div class="voice-status" id="voiceStatus"></div>
+            </div>
+            
+            <div class="response-section" id="responseArea"></div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+            <div class="tts-controls">
+                <label class="tts-checkbox-label">
+                    <input type="checkbox" id="autoReadCheckbox" checked>
+                    Auto-read
+                </label>
+                <button class="btn" id="readBtn" onclick="readLastResponse()" style="background: #27ae60; color: white; padding: 8px 16px; font-size: 14px;">
+                    🔊 Read Response
+                </button>
+                <button class="btn" id="stopBtn" onclick="stopSpeaking()" style="background: #e74c3c; color: white; padding: 8px 16px; font-size: 14px; display: none;">
+                    ⏹ Stop
+                </button>
+                <button class="btn" onclick="clearResponse()" style="background: #95a5a6; color: white; padding: 8px 16px; font-size: 14px;">
+                    Clear
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let isRecording = false;
+        let recognition = null;
+        let eventSource = null;
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+        
+        // Initialize Web Speech API
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            
+            recognition.onstart = () => {
+                isRecording = true;
+                document.getElementById('voiceBtn').classList.add('recording');
+                document.getElementById('voiceStatus').textContent = '🎤 Listening...';
+            };
+            
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('promptInput').value = transcript;
+                document.getElementById('voiceStatus').textContent = `✓ Heard: "${transcript}"`;
+                toggleVoiceInput(); // Stop recording
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                document.getElementById('voiceStatus').textContent = `Error: ${event.error}`;
+                toggleVoiceInput();
+            };
+            
+            recognition.onend = () => {
+                isRecording = false;
+                document.getElementById('voiceBtn').classList.remove('recording');
+                if (!document.getElementById('voiceStatus').textContent.includes('Heard')) {
+                    document.getElementById('voiceStatus').textContent = '';
+                }
+            };
+        } else {
+            document.getElementById('voiceBtn').style.display = 'none';
+        }
+        
+        function toggleVoiceInput() {
+            if (!recognition) {
+                alert('Voice input is not supported in your browser. Please use Chrome or Edge.');
+                return;
+            }
+            
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+        
+        function setPrompt(text) {
+            document.getElementById('promptInput').value = text;
+            document.getElementById('promptInput').focus();
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendPrompt();
+            }
+        }
+        
+        function addMessage(text, type = 'info') {
+            const responseArea = document.getElementById('responseArea');
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+            message.textContent = text;
+            responseArea.appendChild(message);
+            responseArea.scrollTop = responseArea.scrollHeight;
+        }
+        
+        function clearResponse() {
+            stopSpeaking();
+            document.getElementById('responseArea').innerHTML = '';
+        }
+        
+        function updateStatus(text, online = true) {
+            document.getElementById('statusText').textContent = text;
+            const dot = document.getElementById('statusDot');
+            dot.classList.toggle('offline', !online);
+        }
+        
+        // Get natural-sounding voice
+        function getNaturalVoice() {
+            const voices = speechSynthesis.getVoices();
+            
+            if (!voices || voices.length === 0) {
+                return null;
+            }
+            
+            // Prefer neural/enhanced voices for more natural sound
+            // Priority: Neural voices > Enhanced voices > Premium voices > Natural-sounding voices
+            let preferredVoice = null;
+            
+            // 1. Try neural voices (most natural, available in Chrome/Edge)
+            preferredVoice = voices.find(v => 
+                v.name.toLowerCase().includes('neural') && 
+                v.lang.startsWith('en')
+            );
+            
+            // 2. Try enhanced voices
+            if (!preferredVoice) {
+                preferredVoice = voices.find(v => 
+                    v.name.toLowerCase().includes('enhanced') && 
+                    v.lang.startsWith('en')
+                );
+            }
+            
+            // 3. Try premium/premium voices
+            if (!preferredVoice) {
+                preferredVoice = voices.find(v => 
+                    (v.name.toLowerCase().includes('premium') || 
+                     v.name.toLowerCase().includes('premium')) && 
+                    v.lang.startsWith('en')
+                );
+            }
+            
+            // 4. Try natural-sounding named voices (common in macOS/iOS)
+            if (!preferredVoice) {
+                const naturalNames = ['Samantha', 'Alex', 'Victoria', 'Daniel', 'Karen', 
+                                     'Moira', 'Tessa', 'Fiona', 'Ava', 'Nora', 'Zira', 'Mark'];
+                preferredVoice = voices.find(v => 
+                    naturalNames.some(name => v.name.includes(name)) && 
+                    v.lang.startsWith('en')
+                );
+            }
+            
+            // 5. Prefer female voices (often sound more natural in TTS)
+            if (!preferredVoice) {
+                preferredVoice = voices.find(v => 
+                    v.lang.startsWith('en') && 
+                    (v.name.toLowerCase().includes('female') || 
+                     v.name.toLowerCase().includes('woman') ||
+                     v.name.toLowerCase().includes('samantha') ||
+                     v.name.toLowerCase().includes('karen') ||
+                     v.name.toLowerCase().includes('moira'))
+                );
+            }
+            
+            // 6. Fallback to any English voice
+            if (!preferredVoice) {
+                preferredVoice = voices.find(v => v.lang.startsWith('en-US')) ||
+                                voices.find(v => v.lang.startsWith('en-GB')) ||
+                                voices.find(v => v.lang.startsWith('en'));
+            }
+            
+            // 7. Last resort - any voice
+            return preferredVoice || voices[0];
+        }
+        
+        // Initialize voices (needed for Chrome)
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {
+                // Voices loaded
+            };
+        }
+        
+        // Text-to-Speech functionality with natural voice
+        function speakText(text) {
+            // Stop any current speech
+            stopSpeaking();
+            
+            if (!text || text.trim() === '') {
+                console.log('No text to speak');
+                return;
+            }
+            
+            // Clean text - remove emojis and special characters, add natural pauses
+            let cleanText = text.replace(/[📤📧📅🔍⏰🤖✓✗🎤🔊⏹]/g, '').trim();
+            
+            // Add natural pauses after sentences and commas for more natural speech
+            cleanText = cleanText
+                .replace(/\. /g, '. ')  // Keep sentence pauses
+                .replace(/, /g, ', ')    // Keep comma pauses
+                .replace(/! /g, '! ')   // Keep exclamation pauses
+                .replace(/\? /g, '? '); // Keep question pauses
+            
+            if (!cleanText || cleanText.length < 10) {
+                console.log('No meaningful text to speak');
+                return;
+            }
+            
+            // Get natural voice
+            const voice = getNaturalVoice();
+            
+            currentUtterance = new SpeechSynthesisUtterance(cleanText);
+            currentUtterance.lang = 'en-US';
+            
+            // Natural speech settings for human-like voice
+            currentUtterance.rate = 1.0;   // Natural speaking rate (not too fast, not too slow)
+            currentUtterance.pitch = 1.0;  // Natural pitch
+            currentUtterance.volume = 1.0; // Full volume
+            
+            // Use natural-sounding voice if available
+            if (voice) {
+                currentUtterance.voice = voice;
+                console.log('Using voice:', voice.name);
+            }
+            
+            currentUtterance.onstart = () => {
+                document.getElementById('readBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'inline-block';
+            };
+            
+            currentUtterance.onend = () => {
+                document.getElementById('readBtn').style.display = 'inline-block';
+                document.getElementById('stopBtn').style.display = 'none';
+                currentUtterance = null;
+            };
+            
+            currentUtterance.onerror = (event) => {
+                console.error('Speech synthesis error:', event);
+                document.getElementById('readBtn').style.display = 'inline-block';
+                document.getElementById('stopBtn').style.display = 'none';
+                currentUtterance = null;
+            };
+            
+            speechSynthesis.speak(currentUtterance);
+        }
+        
+        function stopSpeaking() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            currentUtterance = null;
+            document.getElementById('readBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'none';
+        }
+        
+        function readLastResponse() {
+            const finalResponse = extractFinalResponse();
+            if (finalResponse) {
+                speakText(finalResponse);
+            } else {
+                alert('No readable response found');
+            }
+        }
+        
+        function extractFinalResponse() {
+            const responseArea = document.getElementById('responseArea');
+            const text = responseArea.textContent || responseArea.innerText;
+            
+            // Pattern: Look for content between separator lines (lines with = characters)
+            // Example:
+            // FINAL RESPONSE:
+            // ============================================================
+            // [CONTENT TO EXTRACT]
+            // ============================================================
+            
+            // Try to match content between separator lines
+            const separatorPattern = /={50,}/; // Match lines with 50+ equals signs
+            
+            // Split by lines
+            const lines = text.split('\n');
+            let startIndex = -1;
+            let endIndex = -1;
+            
+            // Find the first separator line after "FINAL RESPONSE:"
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].match(/FINAL RESPONSE:/i)) {
+                    // Look for separator after "FINAL RESPONSE:"
+                    for (let j = i + 1; j < lines.length; j++) {
+                        if (separatorPattern.test(lines[j])) {
+                            startIndex = j + 1; // Content starts after separator
+                            // Find the next separator
+                            for (let k = startIndex; k < lines.length; k++) {
+                                if (separatorPattern.test(lines[k])) {
+                                    endIndex = k; // Content ends before this separator
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            // If we found content between separators, extract it
+            if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+                const extracted = lines.slice(startIndex, endIndex)
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0) // Remove empty lines
+                    .join(' ')
+                    .trim();
+                
+                if (extracted.length > 10) {
+                    return extracted;
+                }
+            }
+            
+            // Fallback: Look for "FINAL RESPONSE:" marker with simpler pattern
+            const finalResponseMatch = text.match(/FINAL RESPONSE:\s*\n\s*={50,}\s*\n([\s\S]*?)\n\s*={50,}/i);
+            if (finalResponseMatch && finalResponseMatch[1]) {
+                const content = finalResponseMatch[1]
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0 && !line.match(/^={50,}$/)) // Remove separators and empty lines
+                    .join(' ')
+                    .trim();
+                
+                if (content.length > 10) {
+                    return content;
+                }
+            }
+            
+            // Fallback: If no marker, get the last substantial message
+            const messages = responseArea.querySelectorAll('.message');
+            for (let i = messages.length - 1; i >= 0; i--) {
+                const msgText = messages[i].textContent.trim();
+                // Skip system messages and short messages
+                if (msgText.length > 20 && 
+                    !msgText.startsWith('📤') && 
+                    !msgText.startsWith('✓ Complete!') &&
+                    !msgText.startsWith('--- Iteration') &&
+                    !msgText.startsWith('Step ') &&
+                    !msgText.match(/^User Request:/) &&
+                    !msgText.match(/^FINAL RESPONSE:/i) &&
+                    !msgText.match(/^={50,}$/)) {
+                    return msgText;
+                }
+            }
+            
+            // Last fallback: return all text if no specific response found
+            return text.trim();
+        }
+        
+        async function sendPrompt() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+            
+            // Stop any current speech
+            stopSpeaking();
+            
+            // Clear previous response
+            clearResponse();
+            addMessage(`📤 Sending: ${prompt}`, 'info');
+            updateStatus('Processing...', true);
+            
+            // Disable input
+            document.getElementById('promptInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('voiceBtn').disabled = true;
+            
+            try {
+                // Use Server-Sent Events for streaming
+                if (eventSource) {
+                    eventSource.close();
+                }
+                
+                eventSource = new EventSource(`/api/agent/stream?prompt=${encodeURIComponent(prompt)}`);
+                
+                eventSource.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.done) {
+                        eventSource.close();
+                        updateStatus('Ready', true);
+                        document.getElementById('promptInput').disabled = false;
+                        document.getElementById('sendBtn').disabled = false;
+                        document.getElementById('voiceBtn').disabled = false;
+                        addMessage('\n✓ Complete!', 'success');
+                        
+                        // Auto-read if enabled
+                        if (document.getElementById('autoReadCheckbox').checked) {
+                            setTimeout(() => {
+                                const finalResponse = extractFinalResponse();
+                                if (finalResponse) {
+                                    speakText(finalResponse);
+                                }
+                            }, 500); // Small delay to ensure DOM is updated
+                        }
+                    } else if (data.message) {
+                        addMessage(data.message);
+                    }
+                };
+                
+                eventSource.onerror = (error) => {
+                    console.error('SSE error:', error);
+                    eventSource.close();
+                    updateStatus('Error', false);
+                    addMessage('✗ Connection error. Trying alternative method...', 'error');
+                    
+                    // Fallback to regular request
+                    fetch('/api/agent/run', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({prompt: prompt})
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            addMessage(data.stdout);
+                            
+                            // Auto-read if enabled
+                            if (document.getElementById('autoReadCheckbox').checked) {
+                                setTimeout(() => {
+                                    const finalResponse = extractFinalResponse();
+                                    if (finalResponse) {
+                                        speakText(finalResponse);
+                                    }
+                                }, 500);
+                            }
+                        } else {
+                            addMessage(`Error: ${data.error}`, 'error');
+                        }
+                        updateStatus('Ready', true);
+                        document.getElementById('promptInput').disabled = false;
+                        document.getElementById('sendBtn').disabled = false;
+                        document.getElementById('voiceBtn').disabled = false;
+                    })
+                    .catch(err => {
+                        addMessage(`Error: ${err.message}`, 'error');
+                        updateStatus('Error', false);
+                        document.getElementById('promptInput').disabled = false;
+                        document.getElementById('sendBtn').disabled = false;
+                        document.getElementById('voiceBtn').disabled = false;
+                    });
+                };
+                
+            } catch (error) {
+                addMessage(`Error: ${error.message}`, 'error');
+                updateStatus('Error', false);
+                document.getElementById('promptInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('voiceBtn').disabled = false;
+            }
+        }
+        
+        // Initialize voices and wait for them to load
+        function initializeVoices() {
+            // Chrome needs voices to load asynchronously
+            if (speechSynthesis.getVoices().length === 0) {
+                speechSynthesis.addEventListener('voiceschanged', () => {
+                    console.log('Voices loaded:', speechSynthesis.getVoices().length);
+                }, { once: true });
+            }
+        }
+        
+        // Initialize
+        initializeVoices();
+        updateStatus('Ready', true);
+    </script>
+</body>
+</html>
