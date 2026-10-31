@@ -26,10 +26,6 @@ def initialize_gmail():
         print(f"Failed to initialize Gmail client: {e}", file=sys.stderr)
         return False
 
-# Initialize on import
-if not initialize_gmail():
-    print("Warning: Gmail client initialization failed. Some tools may not work.", file=sys.stderr)
-
 app = Server("gmail-mcp-server")
 
 @app.list_tools()
@@ -204,7 +200,7 @@ async def list_tools() -> list[Tool]:
         # Deletion
         Tool(
             name="delete_email",
-            description="Delete a single email by message ID. WARNING: Permanent deletion.",
+            description="Move an email to Gmail Trash; it can be restored before Trash is emptied.",
             inputSchema={
                 "type": "object",
                 "properties": {"message_id": {"type": "string"}},
@@ -213,7 +209,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="delete_emails_from_sender",
-            description="Delete all emails from a specific sender. WARNING: Permanent deletion.",
+            description="Move matching emails from a sender to Gmail Trash; they can be restored before Trash is emptied.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -298,11 +294,8 @@ async def list_tools() -> list[Tool]:
 @app.call_tool()
 async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     """Handle tool calls."""
-    if gmail_client is None:
-        return [TextContent(
-            type="text",
-            text=json.dumps({"error": "Gmail client not initialized. Please check credentials."})
-        )]
+    if gmail_client is None and not initialize_gmail():
+        return [TextContent(type="text", text=json.dumps({"error": "Gmail client initialization failed; check credentials and OAuth access."}))]
     
     try:
         # Email Reading

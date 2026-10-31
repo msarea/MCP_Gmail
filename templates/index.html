@@ -682,20 +682,20 @@
         }
         
         async function deleteEmail(messageId) {
-            if (!confirm('Are you sure you want to delete this email?')) return;
+            if (!confirm('Move this email to Gmail Trash?')) return;
             
             const result = await apiCall(`/emails/${messageId}`, 'DELETE');
             if (result.error) {
                 showError(result.error);
             } else {
-                showSuccess('Email deleted');
+                showSuccess('Email moved to Trash');
                 loadUnreadEmails();
             }
         }
         
         async function deleteFromSender() {
             const senderEmail = document.getElementById('delete-sender').value;
-            if (!confirm(`Are you sure you want to delete all emails from ${senderEmail}?`)) return;
+            if (!confirm(`Move all matching emails from ${senderEmail} to Gmail Trash?`)) return;
             
             const result = await apiCall('/emails/delete-from-sender', 'POST', {
                 sender_email: senderEmail,
@@ -704,7 +704,7 @@
             if (result.error) {
                 showError(result.error);
             } else {
-                showSuccess(`Deleted ${result.result.deleted_count} emails`);
+                showSuccess(`Moved ${result.result.trashed_count} emails to Trash`);
                 closeModal('deleteModal');
             }
         }

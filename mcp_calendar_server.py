@@ -20,16 +20,12 @@ def initialize_calendar():
     """Initialize Calendar client with authentication."""
     global calendar_client
     try:
-        # Note: This relies on the 'credentials.json' and 'token.json' setup
+        # Uses credentials.json and the calendar_token.json OAuth token
         calendar_client = CalendarClient()
         return True
     except Exception as e:
         print(f"Failed to initialize Calendar client: {e}", file=sys.stderr)
         return False
-
-# Initialize on import
-if not initialize_calendar():
-    print("Warning: Calendar client initialization failed. Some tools may not work.", file=sys.stderr)
 
 app = Server("calendar-mcp-server")
 
@@ -138,11 +134,8 @@ async def list_tools() -> list[Tool]:
 @app.call_tool()
 async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     """Handle tool calls."""
-    if calendar_client is None:
-        return [TextContent(
-            type="text",
-            text=json.dumps({"error": "Calendar client not initialized. Please check credentials."}, indent=2)
-        )]
+    if calendar_client is None and not initialize_calendar():
+        return [TextContent(type="text", text=json.dumps({"error": "Calendar client initialization failed; check credentials and OAuth access."}))]
     
     try:
         # Event Management

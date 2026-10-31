@@ -8,10 +8,11 @@ import sys
 import os
 import json
 import asyncio
+import urllib.parse
+import urllib.request
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
-from location_helper import get_location_coordinates, geocode_location
 
 # Initialize the server
 app = Server("search-mcp-server")
@@ -22,7 +23,7 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="search_web",
-            description="Search the web for information. Use this for general queries, news, facts, or any information that might be on the internet.",
+            description="Search the web using Brave Search. Requires BRAVE_SEARCH_API_KEY.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -45,7 +46,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="find_places",
-            description="Find places, businesses, restaurants, or points of interest near a location. Use this for location-based searches like 'coffee shops', 'hotels', 'restaurants', etc.",
+            description="Find places using Google Places. Requires GOOGLE_MAPS_API_KEY.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -68,7 +69,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="get_weather",
-            description="Get current weather information for a location.",
+            description="Get current weather for a location using Open-Meteo.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -82,7 +83,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="get_location_info",
-            description="Get general information about a location (coordinates, timezone, population, etc.).",
+            description="Look up location coordinates and available metadata using Open-Meteo geocoding.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -96,131 +97,62 @@ async def list_tools() -> list[Tool]:
         )
     ]
 
+def _json_request(url, headers=None):
+    request = urllib.request.Request(url, headers=headers or {"User-Agent": "MCP-Gmail/1.0"})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _geocode(location):
+    url = "https://geocoding-api.open-meteo.com/v1/search?" + urllib.parse.urlencode({"name": location, "count": 1, "language": "en", "format": "json"})
+    results = _json_request(url).get("results", [])
+    return results[0] if results else None
+
+
 @app.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-    """Handle tool calls."""
-    
-    if name == "search_web":
-        query = arguments.get("query", "")
-        location = arguments.get("location")
-        max_results = arguments.get("max_results", 5)
-        
-        # Get location coordinates if location provided
-        location_info = ""
-        if location:
-            coords = get_location_coordinates(f"location: {location}")
-            if coords:
-                location_info = f" (near {location} at {coords['latitude']}, {coords['longitude']})"
-        
-        # For now, return a structured response that Gemini can use
-        # In production, you would call an actual search API here
-        result = {
-            "query": query,
-            "location": location,
-            "location_coords": get_location_coordinates(f"location: {location}") if location else None,
-            "message": f"I searched for '{query}'{location_info if location_info else ''}. "
-                      f"Here's what I found based on general knowledge and the location context provided. "
-                      f"For real-time web search results, you would need to integrate with a search API like Google Custom Search, Bing Search, or DuckDuckGo.",
-            "suggestion": "To get actual web search results, integrate with Google Custom Search API, Bing Search API, or use a service like SerpAPI."
-        }
-        
-        return [TextContent(
-            type="text",
-            text=json.dumps(result, indent=2)
-        )]
-    
-    elif name == "find_places":
-        query = arguments.get("query", "")
-        location = arguments.get("location", "")
-        max_results = arguments.get("max_results", 10)
-        
-        if not location:
-            return [TextContent(
-                type="text",
-                text=json.dumps({"error": "Location is required for finding places"}, indent=2)
-            )]
-        
-        # Get location coordinates
-        coords = get_location_coordinates(f"location: {location}")
-        
-        if not coords:
-            return [TextContent(
-                type="text",
-                text=json.dumps({
-                    "error": f"Could not find coordinates for location: {location}",
-                    "suggestion": "Try a more specific location name or enable Google Geocoding API"
-                }, indent=2)
-            )]
-        
-        # For now, return structured response
-        # In production, you would call Google Places API, Yelp API, or similar
-        result = {
-            "query": query,
-            "location": location,
-            "coordinates": coords,
-            "message": f"I found information about '{query}' near {location} (coordinates: {coords['latitude']}, {coords['longitude']}). "
-                      f"For actual place listings with ratings, hours, and reviews, integrate with Google Places API or Yelp API.",
-            "suggestion": "To get real place data, integrate with Google Places API (requires Google Maps API key) or Yelp Fusion API."
-        }
-        
-        return [TextContent(
-            type="text",
-            text=json.dumps(result, indent=2)
-        )]
-    
-    elif name == "get_weather":
-        location = arguments.get("location", "")
-        
-        if not location:
-            return [TextContent(
-                type="text",
-                text=json.dumps({"error": "Location is required"}, indent=2)
-            )]
-        
-        coords = get_location_coordinates(f"location: {location}")
-        
-        result = {
-            "location": location,
-            "coordinates": coords,
-            "message": f"To get current weather for {location}, integrate with a weather API like OpenWeatherMap, WeatherAPI, or AccuWeather. "
-                      f"Location coordinates: {coords if coords else 'not found'}",
-            "suggestion": "Integrate with OpenWeatherMap API (free tier available) or WeatherAPI for real-time weather data."
-        }
-        
-        return [TextContent(
-            type="text",
-            text=json.dumps(result, indent=2)
-        )]
-    
-    elif name == "get_location_info":
-        location = arguments.get("location", "")
-        
-        if not location:
-            return [TextContent(
-                type="text",
-                text=json.dumps({"error": "Location is required"}, indent=2)
-            )]
-        
-        coords = get_location_coordinates(f"location: {location}")
-        
-        result = {
-            "location": location,
-            "coordinates": coords,
-            "message": f"Location: {location}. Coordinates: {coords if coords else 'not found'}. "
-                      f"For detailed location information (population, timezone, etc.), use Google Geocoding API or GeoNames API.",
-            "suggestion": "Use Google Geocoding API (reverse geocoding) or GeoNames API for detailed location information."
-        }
-        
-        return [TextContent(
-            type="text",
-            text=json.dumps(result, indent=2)
-        )]
-    
-    else:
-        return [TextContent(
-            type="text",
-            text=json.dumps({"error": f"Unknown tool: {name}"}, indent=2)
-        )]
+    """Handle tool calls using real providers and report missing configuration honestly."""
+    try:
+        if name == "search_web":
+            query = (arguments.get("query") or "").strip()
+            if not query:
+                result = {"error": "query is required"}
+            elif not os.getenv("BRAVE_SEARCH_API_KEY"):
+                result = {"status": "not_configured", "error": "Set BRAVE_SEARCH_API_KEY to enable web search."}
+            else:
+                params = urllib.parse.urlencode({"q": query, "count": max(1, min(int(arguments.get("max_results", 5)), 20))})
+                data = _json_request("https://api.search.brave.com/res/v1/web/search?" + params, {"Accept": "application/json", "X-Subscription-Token": os.environ["BRAVE_SEARCH_API_KEY"], "User-Agent": "MCP-Gmail/1.0"})
+                result = {"query": query, "results": [{"title": item.get("title"), "url": item.get("url"), "description": item.get("description")} for item in data.get("web", {}).get("results", [])]}
+        elif name == "find_places":
+            query, location = (arguments.get("query") or "").strip(), (arguments.get("location") or "").strip()
+            key = os.getenv("GOOGLE_MAPS_API_KEY")
+            if not key:
+                result = {"status": "not_configured", "error": "Set GOOGLE_MAPS_API_KEY to enable Google Places search."}
+            else:
+                import googlemaps
+                client = googlemaps.Client(key=key)
+                data = client.places(query=f"{query} in {location}", page_token=None)
+                limit = max(1, min(int(arguments.get("max_results", 10)), 20))
+                result = {"query": query, "location": location, "results": [{"name": item.get("name"), "address": item.get("formatted_address"), "rating": item.get("rating"), "place_id": item.get("place_id")} for item in data.get("results", [])[:limit]]}
+        elif name in ("get_weather", "get_location_info"):
+            location = (arguments.get("location") or "").strip()
+            if not location:
+                result = {"error": "location is required"}
+            else:
+                place = _geocode(location)
+                if not place:
+                    result = {"status": "not_found", "location": location}
+                elif name == "get_location_info":
+                    result = {"location": location, "name": place.get("name"), "country": place.get("country"), "admin1": place.get("admin1"), "latitude": place.get("latitude"), "longitude": place.get("longitude"), "timezone": place.get("timezone"), "population": place.get("population")}
+                else:
+                    params = urllib.parse.urlencode({"latitude": place["latitude"], "longitude": place["longitude"], "current": "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m", "timezone": "auto"})
+                    forecast = _json_request("https://api.open-meteo.com/v1/forecast?" + params)
+                    result = {"location": place.get("name"), "country": place.get("country"), "current": forecast.get("current"), "units": forecast.get("current_units")}
+        else:
+            result = {"error": f"Unknown tool: {name}"}
+    except Exception as error:
+        result = {"error": str(error)}
+    return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
 async def main():
     """Main entry point for the MCP server."""

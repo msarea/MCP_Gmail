@@ -10,15 +10,13 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-SCOPES = ['https://mail.google.com/',
-          'https://www.googleapis.com/auth/calendar'
-          ]
+SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
 
 class GmailClient:
-    def __init__(self, credentials_path='credentials.json', token_path='token.json'):
-        self.credentials_path = credentials_path
-        self.token_path = token_path
+    def __init__(self, credentials_path=None, token_path=None):
+        self.credentials_path = credentials_path or os.getenv('GOOGLE_CREDENTIALS_FILE', 'credentials.json')
+        self.token_path = token_path or os.getenv('GMAIL_TOKEN_FILE', 'gmail_token.json')
         self.service = None
         self._authenticate()
 
@@ -461,18 +459,18 @@ class GmailClient:
     # ========== DELETION ==========
     
     def delete_email(self, message_id):
-        """Delete a single email by message ID."""
+        """Move a single email to Trash by message ID."""
         try:
-            self.service.users().messages().delete(
+            self.service.users().messages().trash(
                 userId='me',
                 id=message_id
             ).execute()
-            return {'success': True, 'message_id': message_id, 'action': 'deleted'}
+            return {'success': True, 'message_id': message_id, 'action': 'trashed'}
         except HttpError as error:
             raise Exception(f"An error occurred: {error}")
 
     def delete_emails_from_sender(self, sender_email, max_results=100):
-        """Delete all emails from a specific sender."""
+        """Move emails from a specific sender to Trash."""
         try:
             query = f'from:{sender_email}'
             results = self.service.users().messages().list(
@@ -482,24 +480,24 @@ class GmailClient:
             ).execute()
             
             messages = results.get('messages', [])
-            deleted_count = 0
+            trashed_count = 0
             failed_ids = []
             
             for message in messages:
                 try:
-                    self.service.users().messages().delete(
+                    self.service.users().messages().trash(
                         userId='me',
                         id=message['id']
                     ).execute()
-                    deleted_count += 1
+                    trashed_count += 1
                 except Exception as e:
-                    print(f"Failed to delete {message['id']}: {e}")
+                    print(f"Failed to trash {message['id']}: {e}")
 
                     failed_ids.append(message['id'])
             
             return {
                 'success': True,
-                'deleted_count': deleted_count,
+                'trashed_count': trashed_count,
                 'total_found': len(messages),
                 'failed_ids': failed_ids
             }
@@ -507,23 +505,23 @@ class GmailClient:
             raise Exception(f"An error occurred: {error}")
 
     def delete_emails_batch(self, message_ids):
-        """Delete multiple emails by their IDs."""
-        deleted_count = 0
+        """Move multiple emails to Trash by their IDs."""
+        trashed_count = 0
         failed_ids = []
         
         for message_id in message_ids:
             try:
-                self.service.users().messages().delete(
+                self.service.users().messages().trash(
                     userId='me',
                     id=message_id
                 ).execute()
-                deleted_count += 1
+                trashed_count += 1
             except Exception as e:
                 failed_ids.append(message_id)
         
         return {
             'success': True,
-            'deleted_count': deleted_count,
+            'trashed_count': trashed_count,
             'total_requested': len(message_ids),
             'failed_ids': failed_ids
         }
@@ -602,13 +600,13 @@ class GmailClient:
             raise Exception(f"An error occurred: {error}")
 
     def delete_thread(self, thread_id):
-        """Delete an entire thread."""
+        """Move an entire thread to Trash."""
         try:
-            self.service.users().threads().delete(
+            self.service.users().threads().trash(
                 userId='me',
                 id=thread_id
             ).execute()
-            return {'success': True, 'thread_id': thread_id}
+            return {'success': True, 'thread_id': thread_id, 'action': 'trashed'}
         except HttpError as error:
             raise Exception(f"An error occurred: {error}")
 

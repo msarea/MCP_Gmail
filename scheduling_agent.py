@@ -450,7 +450,7 @@ Only search for a single, most recent email from Alice with that subject."""
         traceback.print_exc()
         print("\nTroubleshooting:")
         print("1. Make sure mcp_gmail_server.py and mcp_calendar_server.py exist")
-        print("2. Check that credentials.json and token.json are in the directory")
+        print("2. Check credentials.json and the Gmail/Calendar token files are available")
         print("3. Verify Python can execute the server scripts")
         print("4. Try running the servers manually to check for errors:")
         print("   python3 mcp_gmail_server.py")

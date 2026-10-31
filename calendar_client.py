@@ -6,15 +6,16 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-SCOPES = ['https://mail.google.com/',
-          'https://www.googleapis.com/auth/calendar'
-          ]
+SCOPES = [
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/calendar.events',
+]
 
 
 class CalendarClient:
-    def __init__(self, credentials_path='credentials.json', token_path='token.json'):
-        self.credentials_path = credentials_path
-        self.token_path = token_path
+    def __init__(self, credentials_path=None, token_path=None):
+        self.credentials_path = credentials_path or os.getenv('GOOGLE_CREDENTIALS_FILE', 'credentials.json')
+        self.token_path = token_path or os.getenv('CALENDAR_TOKEN_FILE', 'calendar_token.json')
         self.service = None
         self._authenticate()
 

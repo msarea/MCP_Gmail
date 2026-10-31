@@ -28,7 +28,9 @@ python3 -m pip install -r requirements.txt
 When you first run the server, it will:
 1. Open a browser window for Google OAuth authentication
 2. Ask you to sign in and grant permissions
-3. Save the token to `token.json` for future use
+3. Save separate Gmail and Calendar tokens (`gmail_token.json` and `calendar_token.json`) for future use
+
+The first authorization after this update asks for narrower permissions. Gmail uses `gmail.modify`; Calendar uses `calendar.readonly` and `calendar.events`. Existing `token.json` grants are not reused. If Google reports an old grant, revoke the previous app access in your Google Account and authorize again.
 
 ### 4. Run the MCP Server
 
@@ -87,13 +89,17 @@ The MCP server can be used with any MCP-compatible client. Example tool calls:
 
 ## Security Notes
 
-- Keep `credentials.json` and `token.json` secure and never commit them to version control
-- The `token.json` file contains your OAuth tokens and should be kept private
+- Keep `credentials.json` and all OAuth token files secure and never commit them to version control
+- `gmail_token.json` and `calendar_token.json` contain OAuth tokens and are ignored by Git
 - Only grant necessary permissions when authenticating
 - The Flask interface can read, send, and delete email. It binds to localhost with debug mode disabled. Do not expose it to a network without adding authentication and using an appropriate deployment server.
 
 ## Troubleshooting
 
 - **"Credentials file not found"**: Make sure `credentials.json` is in the project directory
-- **Authentication errors**: Delete `token.json` and re-authenticate
+- **Authentication errors**: Delete the relevant token file (`gmail_token.json` or `calendar_token.json`) and re-authenticate
 - **Permission errors**: Make sure you've granted the necessary Gmail permissions during OAuth
+
+## Search and location tools
+
+`get_weather` and `get_location_info` use Open-Meteo geocoding and forecast endpoints. `search_web` requires a `BRAVE_SEARCH_API_KEY`; `find_places` requires a Google Maps API key in `GOOGLE_MAPS_API_KEY`. These tools return a clear configuration error when a required key is missing instead of presenting placeholder results as real search results.

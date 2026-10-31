@@ -1,6 +1,8 @@
 # Credentials and tokens
 credentials.json
 token.json
+*_token.json
+.env
 *.pickle
 
 # Python
